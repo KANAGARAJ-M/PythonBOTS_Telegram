@@ -1,0 +1,1 @@
+{"version":2,"languages":{"python3-pip":{"specfileHash":"85356a9cbdedad5b8c0150b011086f54","guessedImports":["supabase","pyTelegramBotAPI","Flask"],"guessedImportsHash":"7138eea9ab67a22ce4cc66d430e3e486"},"python3-uv":{"specfileHash":"0b392cbaf8d0250a95b235b9a6e5c049","lockfileHash":"582c5690b9f4a59c8ddc51ea9a5b5b88"}}}
